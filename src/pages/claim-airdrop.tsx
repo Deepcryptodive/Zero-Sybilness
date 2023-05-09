@@ -21,14 +21,20 @@ import {
 import { publicClient, mumbaiFork } from "../../config";
 import { privateKeyToAccount } from "viem/accounts";
 
-export const sismoConnectConfig: SismoConnectClientConfig = {
-  // you can create a new Sismo Connect app at https://factory.sismo.io
-  appId: "0xf4977993e52606cfd67b7a1cde717069",
-  devMode: {
-    // enable or disable dev mode here to create development groups and use the development vault.
-    enabled: true,
-  },
-};
+// Sismo Connect configuration
+// you can create a new Sismo Connect app at https://factory.sismo.io
+// The SismoConnectClientConfig is a configuration needed to connect to Sismo Connect and requests data from your users.
+// You can find more information about the configuration here: https://docs.sismo.io/build-with-sismo-connect/technical-documentation/sismo-connect-react
+
+/////////////// UNCOMMENT THE LINES BELOW ///////////////////////
+// export const sismoConnectConfig: SismoConnectClientConfig = {
+//   // you can create a new Sismo Connect app at https://factory.sismo.io
+//   appId: "0xf4977993e52606cfd67b7a1cde717069",
+//   devMode: {
+//     // enable or disable dev mode here to create development groups and use the development vault.
+//     enabled: true,
+//   },
+// };
 
 export default function ClaimAirdrop() {
   const [verifying, setVerifying] = useState(false);
@@ -130,14 +136,12 @@ export default function ClaimAirdrop() {
     }
   };
 
-  async function verify(responseBytes: string) {
+  async function claim() {
     // first we update the react state to show the loading state
     setVerifying(true);
 
     // we switch the network to the mumbai fork
     await switchNetwork();
-
-    console.log("responseBytes", responseBytes);
 
     // contract address of the AirdropLevel0 contract on the local anvil fork network
     // this contractAddress should be replaced with the correct address if the contract is deployed on a different network
@@ -150,21 +154,23 @@ export default function ClaimAirdrop() {
       publicClient,
       walletClient,
     });
-    console.log("responseBytes", responseBytes);
+
+    console.log("contract", contract);
+    console.log("account", account);
+
     try {
       // We simulate the call to the contract to get the error if the tx is invalid
-      await contract.simulate.claimWithSismoConnect([responseBytes, account]);
-
-      // If the simulation is successful, we call the contract
-      const txHash = await walletClient.writeContract({
+      const txArgs = {
         address: contractAddress as any as never,
         abi: AirdropABI as any as never,
-        functionName: "claimWithSismoConnect" as any as never,
-        args: [responseBytes, account] as any as never,
+        functionName: "claim" as any as never,
+        args: [] as any as never,
         account: account as any as never,
         chain: mumbaiFork as any as never,
         value: 0 as any as never,
-      });
+      };
+      await publicClient.simulateContract(txArgs);
+      const txHash = await walletClient.writeContract(txArgs);
 
       // sleep 2 seconds to wait for the tx to be mined on the fork
       // before fetching the tx receipt
@@ -195,6 +201,70 @@ export default function ClaimAirdrop() {
     }
   }
 
+  // async function verify(responseBytes: string) {
+  //   // first we update the react state to show the loading state
+  //   setVerifying(true);
+
+  //   // we switch the network to the mumbai fork
+  //   await switchNetwork();
+
+  //   console.log("responseBytes", responseBytes);
+
+  //   // contract address of the AirdropLevel0 contract on the local anvil fork network
+  //   // this contractAddress should be replaced with the correct address if the contract is deployed on a different network
+  //   const contractAddress = AirdropTransactions.find((tx) => tx.contractName == "Airdrop")
+  //     .contractAddress as `0x${string}`;
+
+  //   const contract = getContract({
+  //     address: contractAddress as any as never,
+  //     abi: AirdropABI as any as never,
+  //     publicClient,
+  //     walletClient,
+  //   });
+  //   console.log("responseBytes", responseBytes);
+  //   try {
+  //     // We call the contract with the new claimWithSismoConnect function
+  //     const txArgs = {
+  //       address: contractAddress as any as never,
+  //       abi: AirdropABI as any as never,
+  //       functionName: "claimWithSismoConnect" as any as never,
+  //       args: [responseBytes, account] as any as never,
+  //       account: account as any as never,
+  //       chain: mumbaiFork as any as never,
+  //       value: 0 as any as never,
+  //     };
+  //     await publicClient.simulateContract(txArgs);
+  //     const txHash = await walletClient.writeContract(txArgs);
+
+  //     // sleep 2 seconds to wait for the tx to be mined on the fork
+  //     // before fetching the tx receipt
+  //     await new Promise((resolve) => setTimeout(resolve, 2000));
+  //     const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+
+  //     // the UserId is the 4th topic of the event emitted by the contract
+  //     // it is the tokenId of the NFT minted by the contract
+  //     const userId = (receipt as { logs: { topics: string[] }[] }).logs[0].topics[3];
+
+  //     // If the proof is valid, we update the user react state to show the user profile
+  //     setVerifiedUser({
+  //       id: userId,
+  //     });
+  //   } catch (e) {
+  //     // else if the tx is invalid, we show an error message
+  //     // it is either because the proof is invalid or because the user already claimed the airdrop
+  //     console.log("error", { ...e });
+  //     console.log("e.shortMessage", e.shortMessage);
+  //     e.shortMessage ===
+  //     'The contract function "claimWithSismoConnect" reverted with the following reason:\nERC721: token already minted'
+  //       ? setError("Airdrop already claimed!")
+  //       : setError(e.shortMessage);
+  //   } finally {
+  //     // We set the loading state to false to show the user profile
+  //     setVerifying(false);
+  //     localStorage.removeItem("airdropAddress");
+  //   }
+  // }
+
   return (
     <>
       <BackButton />
@@ -220,6 +290,12 @@ export default function ClaimAirdrop() {
             )}
 
             {!error && isAirdropAddressKnown && (
+              <button className="connect-wallet-button" onClick={() => claim()}>
+                Claim Airdrop
+              </button>
+            )}
+
+            {/* {!error && isAirdropAddressKnown && (
               <SismoConnectButton
                 config={sismoConnectConfig}
                 auths={[{ authType: AuthType.VAULT }]}
@@ -236,7 +312,7 @@ export default function ClaimAirdrop() {
                 verifying={verifying}
                 callbackPath={"/claim-airdrop"}
               />
-            )}
+            )} */}
           </>
         )}
 
