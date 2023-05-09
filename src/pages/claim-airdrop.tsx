@@ -1,10 +1,9 @@
-import BackButton from "@/components/BackButton";
-import {
-  SismoConnectButton,
-  SismoConnectClientConfig,
-  SismoConnectResponse,
-  AuthType,
-} from "@sismo-core/sismo-connect-react";
+// import {
+//   SismoConnectButton,
+//   SismoConnectClientConfig,
+//   SismoConnectResponse,
+//   AuthType,
+// } from "@sismo-core/sismo-connect-react";
 import { useEffect, useState } from "react";
 import { abi as AirdropABI } from "../../abi/Airdrop.json";
 import { transactions as AirdropTransactions } from "../../broadcast/Airdrop.s.sol/5151110/run-latest.json";
@@ -20,6 +19,7 @@ import {
 } from "viem";
 import { publicClient, mumbaiFork } from "../../config";
 import { privateKeyToAccount } from "viem/accounts";
+import BackButton from "@/components/BackButton";
 
 // Sismo Connect configuration
 // you can create a new Sismo Connect app at https://factory.sismo.io
