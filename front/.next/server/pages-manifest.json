@@ -1,7 +1,0 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/level-0/claim-airdrop": "pages/level-0/claim-airdrop.js",
-  "/": "pages/index.js"
-}

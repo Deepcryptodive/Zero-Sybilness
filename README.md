@@ -13,9 +13,15 @@ This repository aims at providing simple examples on how to integrate Sismo Conn
 ### Install dependencies
 
 ```bash
-# install frontend / backend dependencies
+# install frontend dependencies
+cd front
 yarn
+```
 
+In another terminal:
+
+```bash
+cd ..
 # install contract dependencies with Forge
 forge install
 ```
@@ -24,14 +30,13 @@ forge install
 
 ```bash
 # start a local blockchain with mumbai fork
-yarn anvil
-# this triggers this anvil command behind the scene
-# `anvil --fork-url https://rpc.ankr.com/polygon_mumbai`
+anvil --fork-url https://rpc.ankr.com/polygon_mumbai`
 ```
 
 ### Start your local Next.js app
 
 ```bash
+cd front
 # this will start your Next.js app
 # the frontend is available on http://localhost:3001/
 # it also starts a local backend

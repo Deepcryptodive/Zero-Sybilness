@@ -10,7 +10,6 @@ contract DeployAirdrop is Script {
 
     function run() public {
         vm.startBroadcast();
-        // Airdrop airdrop = new Airdrop({name: "My airdrop contract", symbol: "AIR", appId: APP_ID});
         Airdrop airdrop = new Airdrop("My airdrop contract", "AIR");
         console.log("Airdrop Contract deployed at", address(airdrop));
         vm.stopBroadcast();
