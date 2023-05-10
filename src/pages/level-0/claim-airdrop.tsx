@@ -6,13 +6,28 @@ import {
   http,
   custom,
   WalletClient,
-  getContract,
-  Account,
-  parseEther,
   createPublicClient,
 } from "viem";
 import { polygonMumbai } from "viem/chains";
 import BackButton from "@/components/BackButton";
+
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
+// The application calls contracts on Mumbai testnet
+const userChain = polygonMumbai;
+
+/////// CODE SNIPPET 1: Sismo Connect Client Configuration ///////
+//
+// with your Sismo Connect app ID and enable dev mode.
+// you can create a new Sismo Connect app at https://factory.sismo.io
+// The SismoConnectClientConfig is a configuration needed to connect to Sismo Connect and requests data from your users.
+// You can find more information about the configuration here: https://docs.sismo.io/build-with-sismo-connect/technical-documentation/sismo-connect-react
+//
+/////// UNCOMMENT THE LINES BELOW ///////////////////////////////
 
 // import {
 //   SismoConnectButton,
@@ -21,32 +36,33 @@ import BackButton from "@/components/BackButton";
 //   AuthType,
 // } from "@sismo-core/sismo-connect-react";
 
-// Sismo Connect configuration
-// you can create a new Sismo Connect app at https://factory.sismo.io
-// The SismoConnectClientConfig is a configuration needed to connect to Sismo Connect and requests data from your users.
-// You can find more information about the configuration here: https://docs.sismo.io/build-with-sismo-connect/technical-documentation/sismo-connect-react
-
-/////////////// UNCOMMENT THE LINES BELOW ///////////////////////
 // export const sismoConnectConfig: SismoConnectClientConfig = {
-//   // you can create a new Sismo Connect app at https://factory.sismo.io
 //   appId: "0xf4977993e52606cfd67b7a1cde717069",
 //   devMode: {
-//     // enable or disable dev mode here to create development groups and use the development vault.
 //     enabled: true,
 //   },
 // };
 
-const userChain = polygonMumbai;
+//////////////////////////////////////////////////////////////////
 
 export default function ClaimAirdrop() {
   const [verifying, setVerifying] = useState(false);
-  const [error, setError] = useState(null);
-  const [verifiedUser, setVerifiedUser] = useState<{ id: string }>(null);
-  const [account, setAccount] = useState<`0x${string}`>(null);
-  const [walletClient, setWalletClient] = useState<WalletClient | undefined>();
+  const [error, setError] = useState<string>("");
+  const [tokenId, setTokenId] = useState<{ id: string }>();
+  const [account, setAccount] = useState<`0x${string}`>(
+    "0x0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+  );
   const [isAirdropAddressKnown, setIsAirdropAddressKnown] = useState<boolean>(false);
+  const [walletClient, setWalletClient] = useState<WalletClient>(
+    createWalletClient({
+      chain: userChain,
+      transport: custom(window.ethereum, {
+        key: "windowProvider",
+      }),
+    }) as WalletClient
+  );
 
-  // setup the public and wallet client to interact with the contract deployed on a local fork
+  // setup the public and wallet client to interact with the contract deployed on Mumbai
   // the public client is used to read data from the contract or the chain
   // the wallet client is used to send transactions to the contract
   const publicClient = createPublicClient({
@@ -87,13 +103,6 @@ export default function ClaimAirdrop() {
     localStorage.setItem("airdropAddress", address);
     setAccount(address);
     setIsAirdropAddressKnown(true);
-
-    // Create a wallet client with a publicly known private key
-    const client = createWalletClient({
-      chain: userChain,
-      transport: http(),
-    });
-
     return address;
   }
 
@@ -103,7 +112,7 @@ export default function ClaimAirdrop() {
         method: "wallet_switchEthereumChain",
         params: [{ chainId: `0x${userChain.id.toString(16)}` }],
       });
-    } catch (error) {
+    } catch (error: any) {
       // This error code means that the chain we want has not been added to MetaMask
       // In this case we ask the user to add it to their MetaMask
       if (error.code === 4902) {
@@ -133,31 +142,37 @@ export default function ClaimAirdrop() {
     }
   };
 
-  async function claim() {
-    // first we update the react state to show the loading state
-    setVerifying(true);
+  function handleClaimErrors(e: any) {
+    // else if the tx is invalid, we show an error message
+    // it is either because the proof is invalid or because the user already claimed the airdrop
+    console.log("error", { ...(e as object) });
+    console.log("e.shortMessage", (e as { shortMessage: string }).shortMessage);
+    (e as { shortMessage: string }).shortMessage === 'The contract function "claim" reverted.'
+      ? setError("Airdrop already claimed!")
+      : setError((e as { shortMessage: string }).shortMessage);
+  }
 
-    // we switch the network to the mumbai fork
+  function handleVerifyErrors(e: any) {
+    // else if the tx is invalid, we show an error message
+    // it is either because the proof is invalid or because the user already claimed the airdrop
+    console.log("error", { ...(e as object) });
+    console.log("e.shortMessage", (e as { shortMessage: string }).shortMessage);
+    (e as { shortMessage: string }).shortMessage ===
+    'The contract function "claimWithSismoConnect" reverted with the following reason:\nERC721: token already minted'
+      ? setError("Airdrop already claimed!")
+      : setError((e as { shortMessage: string }).shortMessage);
+  }
+
+  async function claim() {
+    // update the react state to show the loading state
+    setVerifying(true);
+    // switch the network
     await switchNetwork();
 
-    // contract address of the Airdrop contract on Mumbai
-    // this contractAddress should be replaced with the correct address if the contract is deployed on a different network
+    // contract address of the simple Airdrop contract on Mumbai
     const contractAddress = "0x5B130E43a2417ea4Ed46d6A4eCb0522F7cCe86ab";
-    // const contractAddress = AirdropTransactions.find((tx) => tx.contractName == "Airdrop")
-    //   .contractAddress as `0x${string}`;
-
-    const contract = getContract({
-      address: contractAddress as any as never,
-      abi: AirdropMumbaiABI as any as never,
-      publicClient,
-      walletClient,
-    });
-
-    console.log("contract", contract);
-    console.log("account", account);
 
     try {
-      // We simulate the call to the contract to get the error if the tx is invalid
       const txArgs = {
         address: contractAddress as any as never,
         abi: AirdropMumbaiABI as any as never,
@@ -167,108 +182,81 @@ export default function ClaimAirdrop() {
         chain: userChain as any as never,
         value: 0 as any as never,
       };
+      // simulate the call to the contract to get the error if the call reverts
       await publicClient.simulateContract(txArgs);
+      // if the simulation call does not revert, send the tx to the contract
       const txHash = await walletClient.writeContract(txArgs);
 
-      // sleep 2 seconds to wait for the tx to be mined on the fork
-      // before fetching the tx receipt
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setVerifying(true);
+      // wait for the tx to be mined
       const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-      setVerifying(false);
 
-      // the UserId is the 4th topic of the event emitted by the contract
-      // it is the tokenId of the NFT minted by the contract
-      const userId = (receipt as { logs: { topics: string[] }[] }).logs[0].topics[3];
+      // the tokenId of the NFT minted is the 4th topic of the event emitted by the contract
+      const tokenId = (receipt as { logs: { topics: string[] }[] }).logs[0].topics[3];
 
-      // If the proof is valid, we update the user react state to show the user profile
-      setVerifiedUser({
-        id: userId,
-      });
+      // update the user react state to show the tokenId of the NFT minted
+      setTokenId({ id: tokenId });
     } catch (e) {
-      // else if the tx is invalid, we show an error message
-      // it is either because the proof is invalid or because the user already claimed the airdrop
-      console.log("error", { ...e });
-      console.log("e.shortMessage", e.shortMessage);
-      e.shortMessage === 'The contract function "claim" reverted.'
-        ? setError("Airdrop already claimed!")
-        : setError(e.shortMessage);
+      handleClaimErrors(e);
     } finally {
-      // We set the loading state to false to show the user profile
       setVerifying(false);
       localStorage.removeItem("airdropAddress");
     }
   }
 
-  // async function verify(responseBytes: string) {
-  //   // first we update the react state to show the loading state
-  //   setVerifying(true);
+  /////// CODE SNIPPET 3: The `verify` function ///////
+  //
+  // This function is called when the user is redirected from the Sismo Vault to the Sismo Connect app
+  // It is called with the responseBytes returned by the Sismo Vault
+  // The responseBytes is a string that contains plenty of information about the user proofs and additional parameters that should hold with respect to the proofs
+  // You can learn more about the responseBytes format here: https://docs.sismo.io/build-with-sismo-connect/technical-documentation/sismo-connect-client#getresponsebytes
+  //
+  ////// UNCOMMENT THE LINES BELOW ///////////////////
 
-  //   // we switch the network to the mumbai fork
+  // async function verify(responseBytes: string) {
+  //   // update the react state to show the loading state
+  //   setVerifying(true);
+  //   // switch the network
   //   await switchNetwork();
 
-  //   console.log("responseBytes", responseBytes);
+  //   // contract address of the Sismo Connect Airdrop contract on Mumbai
+  //   const contractAddress = ""; // <-- replace with your deployed contract address
 
-  //   // contract address of the AirdropLevel0 contract on the local anvil fork network
-  //   // this contractAddress should be replaced with the correct address if the contract is deployed on a different network
-  //   const contractAddress = AirdropTransactions.find((tx) => tx.contractName == "Airdrop")
-  //     .contractAddress as `0x${string}`;
-
-  //   const contract = getContract({
-  //     address: contractAddress as any as never,
-  //     abi: AirdropABI as any as never,
-  //     publicClient,
-  //     walletClient,
-  //   });
-  //   console.log("responseBytes", responseBytes);
   //   try {
-  //     // We call the contract with the new claimWithSismoConnect function
   //     const txArgs = {
-  //       address: contractAddress as any as never,
-  //       abi: AirdropABI as any as never,
-  //       functionName: "claimWithSismoConnect" as any as never,
-  //       args: [responseBytes, account] as any as never,
-  //       account: account as any as never,
-  //       chain: userChain as any as never,
-  //       value: 0 as any as never,
+  //       address: contractAddress as `0x${string}`,
+  //       abi: AirdropABI,
+  //       functionName: "claimWithSismoConnect", // call the claimWithSismoConnect function
+  //       args: [responseBytes, account],
+  //       account: account,
+  //       chain: userChain,
   //     };
-  //     await publicClient.simulateContract(txArgs);
-  //     const txHash = await walletClient.writeContract(txArgs);
 
-  //     // sleep 2 seconds to wait for the tx to be mined on the fork
-  //     // before fetching the tx receipt
-  //     await new Promise((resolve) => setTimeout(resolve, 2000));
+  //     // simulate the call to the contract to get the error if the call reverts
+  //     await publicClient.simulateContract(txArgs);
+  //     // if the simulation call does not revert, send the tx to the contract
+  //     const txHash = await walletClient.writeContract(txArgs);
+  //     // wait for the tx to be mined
   //     const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
 
-  //     // the UserId is the 4th topic of the event emitted by the contract
-  //     // it is the tokenId of the NFT minted by the contract
-  //     const userId = (receipt as { logs: { topics: string[] }[] }).logs[0].topics[3];
-
-  //     // If the proof is valid, we update the user react state to show the user profile
-  //     setVerifiedUser({
-  //       id: userId,
-  //     });
+  //     // the tokenId of the NFT minted is the 4th topic of the event emitted by the contract
+  //     const tokenId = (receipt as { logs: { topics: string[] }[] }).logs[0].topics[3];
+  //     // If the proof is valid, we update the user react state to show the tokenId
+  //     setTokenId({ id: tokenId });
   //   } catch (e) {
-  //     // else if the tx is invalid, we show an error message
-  //     // it is either because the proof is invalid or because the user already claimed the airdrop
-  //     console.log("error", { ...e });
-  //     console.log("e.shortMessage", e.shortMessage);
-  //     e.shortMessage ===
-  //     'The contract function "claimWithSismoConnect" reverted with the following reason:\nERC721: token already minted'
-  //       ? setError("Airdrop already claimed!")
-  //       : setError(e.shortMessage);
+  //     handleVerifyErrors(e);
   //   } finally {
-  //     // We set the loading state to false to show the user profile
   //     setVerifying(false);
   //     localStorage.removeItem("airdropAddress");
   //   }
   // }
 
+  /////////////////////////////////////////////////
+
   return (
     <>
       <BackButton />
       <div className="container">
-        {!verifiedUser && (
+        {!tokenId && (
           <>
             <h1 style={{ marginBottom: 10 }}>Claim an airdrop</h1>
             {!isAirdropAddressKnown && (
@@ -291,6 +279,48 @@ export default function ClaimAirdrop() {
               )
             )}
 
+            {
+              /////// CODE SNIPPET 2: Sismo Connect React Button ///////
+              //
+              // This is the Sismo Connect button that will be used to create the requests and redirect the user to the Sismo Vault app to generate the proofs from his data
+              // The different props are:
+              // - config: the Sismo Connect client config that contains the Sismo Connect appId
+              // - auths: the auth requests that will be used to generate the proofs, here we only use the Vault auth request
+              // - signature: the signature request that will be used to sign an arbitrary message that will be checked onchain, here it is used to sign the airdrop address
+              // - onResponseBytes: the callback that will be called when the user is redirected back from the his Sismo Vault to the Sismo Connect App with the Sismo Connect response as bytes
+              // - verifying: a boolean that indicates if the Sismo Connect button is in the verifying state
+              // - callbackPath: the path to which the user will be redirected back from the Sismo Vault to the Sismo Connect App
+              // You can see more information about the Sismo Connect button in the Sismo Connect documentation: https://docs.sismo.io/build-with-sismo-connect/technical-documentation/sismo-connect-react
+              //
+              /////// UNCOMMENT THE CODE BELOW TO USE THE SISMO CONNECT BUTTON ///////
+            }
+            {/* {!error && isAirdropAddressKnown && (
+              <SismoConnectButton
+                // the client config created
+                config={sismoConnectConfig}
+                // the auth request we want to make
+                // here we want the proof of a Sismo Vault ownership from our users
+                auths={[{ authType: AuthType.VAULT }]}
+                // we use the AbiCoder to encode the data we want to sign
+                // by encoding it we will be able to decode it on chain
+                signature={{
+                  message: encodeAbiParameters(
+                    [{ type: "address", name: "airdropAddress" }],
+                    [(account as `0x${string}`)]
+                  ),
+                }}
+                // onResponseBytes calls a 'verify' function where the contract call logic
+                // is implemented
+                onResponseBytes={(responseBytes: string) => verify(responseBytes)}
+                // a simple state to know if the button is in verifying state
+                // i.e calling the smart contract
+                verifying={verifying}
+                // the callback path where you want to redirect your users from the Sismo Vault app
+                // here we choose this same page
+                callbackPath={"/level-0/claim-airdrop"}
+              />
+            )} */}
+
             {!error && isAirdropAddressKnown && !verifying && (
               <button className="connect-wallet-button" onClick={() => claim()}>
                 Claim Airdrop
@@ -298,29 +328,10 @@ export default function ClaimAirdrop() {
             )}
 
             {verifying && <p style={{ marginBottom: 40 }}>Verifying...</p>}
-
-            {/* {!error && isAirdropAddressKnown && (
-              <SismoConnectButton
-                config={sismoConnectConfig}
-                auths={[{ authType: AuthType.VAULT }]}
-                // we use the AbiCoder to encode the data we want to sign
-                // by encoding it we will be able to decode it on chain
-                // TODO: make it not crash if the user type something instead of copy pasting directly
-                signature={{
-                  message: encodeAbiParameters(
-                    [{ type: "address", name: "airdropAddress" }],
-                    [(account as `0x${string}`) ?? "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"]
-                  ),
-                }}
-                onResponseBytes={(responseBytes: string) => verify(responseBytes)}
-                verifying={verifying}
-                callbackPath={"/claim-airdrop"}
-              />
-            )} */}
           </>
         )}
 
-        {verifiedUser && (
+        {tokenId && (
           <>
             <h1>Airdrop claimed!</h1>
             <p style={{ marginBottom: 20 }}>
@@ -329,7 +340,7 @@ export default function ClaimAirdrop() {
             <div className="profile-container">
               <div>
                 <h2>NFT Claimed</h2>
-                <b>tokenId: {verifiedUser?.id}</b>
+                <b>tokenId: {tokenId?.id}</b>
                 <p>Address used: {account}</p>
               </div>
             </div>
