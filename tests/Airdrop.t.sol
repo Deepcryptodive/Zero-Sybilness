@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import {Airdrop} from "../contracts/Airdrop.sol";
+import {Airdrop} from "../src/Airdrop.sol";
 
 contract AirdropTest is Test {
   // bytes16 public constant APP_ID = 0xf4977993e52606cfd67b7a1cde717069;

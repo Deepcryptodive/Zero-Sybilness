@@ -1,5 +1,5 @@
 [profile.default]
-contracts       = "contracts"              # The contract directory
+src             = "src"              # The contract directory
 test            = "tests"                  # The test directory
 libs            = ["lib", "node_modules"]  # A list of library directories 
 optimizer       = false                    # Enable or disable the solc optimizer
