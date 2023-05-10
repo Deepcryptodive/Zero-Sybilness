@@ -1,12 +1,5 @@
-// import {
-//   SismoConnectButton,
-//   SismoConnectClientConfig,
-//   SismoConnectResponse,
-//   AuthType,
-// } from "@sismo-core/sismo-connect-react";
 import { useEffect, useState } from "react";
-import { abi as AirdropABI } from "../../abi/Airdrop.json";
-import { transactions as AirdropTransactions } from "../../broadcast/Airdrop.s.sol/5151110/run-latest.json";
+import { abi as AirdropMumbaiABI } from "../../../abi/AirdropMumbai.json";
 import {
   encodeAbiParameters,
   createWalletClient,
@@ -16,10 +9,17 @@ import {
   getContract,
   Account,
   parseEther,
+  createPublicClient,
 } from "viem";
-import { publicClient, mumbaiFork } from "../../config";
-import { privateKeyToAccount } from "viem/accounts";
+import { polygonMumbai } from "viem/chains";
 import BackButton from "@/components/BackButton";
+
+// import {
+//   SismoConnectButton,
+//   SismoConnectClientConfig,
+//   SismoConnectResponse,
+//   AuthType,
+// } from "@sismo-core/sismo-connect-react";
 
 // Sismo Connect configuration
 // you can create a new Sismo Connect app at https://factory.sismo.io
@@ -36,6 +36,8 @@ import BackButton from "@/components/BackButton";
 //   },
 // };
 
+const userChain = polygonMumbai;
+
 export default function ClaimAirdrop() {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
@@ -44,11 +46,19 @@ export default function ClaimAirdrop() {
   const [walletClient, setWalletClient] = useState<WalletClient | undefined>();
   const [isAirdropAddressKnown, setIsAirdropAddressKnown] = useState<boolean>(false);
 
+  // setup the public and wallet client to interact with the contract deployed on a local fork
+  // the public client is used to read data from the contract or the chain
+  // the wallet client is used to send transactions to the contract
+  const publicClient = createPublicClient({
+    chain: userChain,
+    transport: http(),
+  });
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     setWalletClient(
       createWalletClient({
-        chain: mumbaiFork,
+        chain: userChain,
         transport: custom(window.ethereum, {
           key: "windowProvider",
         }),
@@ -80,21 +90,8 @@ export default function ClaimAirdrop() {
 
     // Create a wallet client with a publicly known private key
     const client = createWalletClient({
-      chain: mumbaiFork,
-      transport: http("http://127.0.0.1:8545"),
-    });
-
-    // third private key of anvil accounts
-    const anvilAccount = privateKeyToAccount(
-      "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"
-    );
-
-    // send 1 token to the connected user on the local fork
-    const tx = await client.sendTransaction({
-      account: anvilAccount as any as never,
-      to: address as any as never,
-      value: parseEther("5") as any as never,
-      chain: mumbaiFork as any as never,
+      chain: userChain,
+      transport: http(),
     });
 
     return address;
@@ -104,7 +101,7 @@ export default function ClaimAirdrop() {
     try {
       await window.ethereum.request({
         method: "wallet_switchEthereumChain",
-        params: [{ chainId: `0x${mumbaiFork.id.toString(16)}` }],
+        params: [{ chainId: `0x${userChain.id.toString(16)}` }],
       });
     } catch (error) {
       // This error code means that the chain we want has not been added to MetaMask
@@ -116,13 +113,13 @@ export default function ClaimAirdrop() {
             method: "wallet_addEthereumChain",
             params: [
               {
-                chainId: `0x${mumbaiFork.id.toString(16)}`,
-                chainName: mumbaiFork.name,
-                rpcUrls: mumbaiFork.rpcUrls.default.http,
+                chainId: `0x${userChain.id.toString(16)}`,
+                chainName: userChain.name,
+                rpcUrls: userChain.rpcUrls.default.http,
                 nativeCurrency: {
-                  name: mumbaiFork.nativeCurrency.name,
-                  symbol: mumbaiFork.nativeCurrency.symbol,
-                  decimals: mumbaiFork.nativeCurrency.decimals,
+                  name: userChain.nativeCurrency.name,
+                  symbol: userChain.nativeCurrency.symbol,
+                  decimals: userChain.nativeCurrency.decimals,
                 },
               },
             ],
@@ -143,14 +140,15 @@ export default function ClaimAirdrop() {
     // we switch the network to the mumbai fork
     await switchNetwork();
 
-    // contract address of the AirdropLevel0 contract on the local anvil fork network
+    // contract address of the Airdrop contract on Mumbai
     // this contractAddress should be replaced with the correct address if the contract is deployed on a different network
-    const contractAddress = AirdropTransactions.find((tx) => tx.contractName == "Airdrop")
-      .contractAddress as `0x${string}`;
+    const contractAddress = "0x5B130E43a2417ea4Ed46d6A4eCb0522F7cCe86ab";
+    // const contractAddress = AirdropTransactions.find((tx) => tx.contractName == "Airdrop")
+    //   .contractAddress as `0x${string}`;
 
     const contract = getContract({
       address: contractAddress as any as never,
-      abi: AirdropABI as any as never,
+      abi: AirdropMumbaiABI as any as never,
       publicClient,
       walletClient,
     });
@@ -162,11 +160,11 @@ export default function ClaimAirdrop() {
       // We simulate the call to the contract to get the error if the tx is invalid
       const txArgs = {
         address: contractAddress as any as never,
-        abi: AirdropABI as any as never,
+        abi: AirdropMumbaiABI as any as never,
         functionName: "claim" as any as never,
         args: [] as any as never,
         account: account as any as never,
-        chain: mumbaiFork as any as never,
+        chain: userChain as any as never,
         value: 0 as any as never,
       };
       await publicClient.simulateContract(txArgs);
@@ -175,7 +173,9 @@ export default function ClaimAirdrop() {
       // sleep 2 seconds to wait for the tx to be mined on the fork
       // before fetching the tx receipt
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+      setVerifying(true);
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+      setVerifying(false);
 
       // the UserId is the 4th topic of the event emitted by the contract
       // it is the tokenId of the NFT minted by the contract
@@ -190,8 +190,7 @@ export default function ClaimAirdrop() {
       // it is either because the proof is invalid or because the user already claimed the airdrop
       console.log("error", { ...e });
       console.log("e.shortMessage", e.shortMessage);
-      e.shortMessage ===
-      'The contract function "claimWithSismoConnect" reverted with the following reason:\nERC721: token already minted'
+      e.shortMessage === 'The contract function "claim" reverted.'
         ? setError("Airdrop already claimed!")
         : setError(e.shortMessage);
     } finally {
@@ -230,7 +229,7 @@ export default function ClaimAirdrop() {
   //       functionName: "claimWithSismoConnect" as any as never,
   //       args: [responseBytes, account] as any as never,
   //       account: account as any as never,
-  //       chain: mumbaiFork as any as never,
+  //       chain: userChain as any as never,
   //       value: 0 as any as never,
   //     };
   //     await publicClient.simulateContract(txArgs);
@@ -271,11 +270,14 @@ export default function ClaimAirdrop() {
       <div className="container">
         {!verifiedUser && (
           <>
-            <h1 style={{ marginBottom: 10 }}>Claim an airdrop anonymously</h1>
+            <h1 style={{ marginBottom: 10 }}>Claim an airdrop</h1>
             {!isAirdropAddressKnown && (
+              // <p style={{ marginBottom: 40 }}>
+              //   Select on which address you want to receive the airdrop and sign it with Sismo
+              //   Connect
+              // </p>
               <p style={{ marginBottom: 40 }}>
-                Select on which address you want to receive the airdrop and sign it with Sismo
-                Connect
+                Select on which address you want to receive the airdrop by connecting your wallet
               </p>
             )}
 
@@ -289,11 +291,13 @@ export default function ClaimAirdrop() {
               )
             )}
 
-            {!error && isAirdropAddressKnown && (
+            {!error && isAirdropAddressKnown && !verifying && (
               <button className="connect-wallet-button" onClick={() => claim()}>
                 Claim Airdrop
               </button>
             )}
+
+            {verifying && <p style={{ marginBottom: 40 }}>Verifying...</p>}
 
             {/* {!error && isAirdropAddressKnown && (
               <SismoConnectButton
@@ -320,7 +324,7 @@ export default function ClaimAirdrop() {
           <>
             <h1>Airdrop claimed!</h1>
             <p style={{ marginBottom: 20 }}>
-              The user has chosen an address to receive the airdrop and stay anon
+              The user has chosen an address to receive the airdrop
             </p>
             <div className="profile-container">
               <div>
@@ -335,10 +339,6 @@ export default function ClaimAirdrop() {
         {error && (
           <>
             <h2>{error}</h2>
-            <p>
-              You can try again with another address or deploy again the contracts to restart (see
-              README)
-            </p>
           </>
         )}
       </div>

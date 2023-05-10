@@ -55,11 +55,3 @@ export const mumbaiFork = {
 export const account = privateKeyToAccount(
   "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
 );
-
-// setup the public and wallet client to interact with the contract deployed on a local fork
-// the public client is used to read data from the contract or the chain
-// the wallet client is used to send transactions to the contract
-export const publicClient = createPublicClient({
-  chain: mumbaiFork,
-  transport: http("http://127.0.0.1:8545"),
-});

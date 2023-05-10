@@ -1,7 +1,5 @@
 import "@/styles/globals.css";
-import { getDefaultProvider } from "ethers";
 import type { AppProps } from "next/app";
-import { mumbaiFork } from "../../config";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
