@@ -10,41 +10,48 @@ This repository aims at providing simple examples on how to integrate Sismo Conn
 - [Yarn](https://classic.yarnpkg.com/en/docs/install)
 - [Foundry](https://book.getfoundry.sh/)
 
-### Install dependencies
+### Clone the repository
 
 ```bash
-# install frontend dependencies
-cd front
-yarn
+git clone https://github.com/sismo-core/sismo-connect-onchain-tutorial
+cd sismo-connect-onchain-tutorial
 ```
 
-In another terminal:
+### Install contract dependencies
 
 ```bash
-cd ..
-# install contract dependencies with Forge
+# updates foundry
+foundryup
+# install smart contract dependencies
 forge install
 ```
 
-### Launch your local fork by forking Mumbai with Anvil
+### Launch a local fork chain
 
 ```bash
-# start a local blockchain with mumbai fork
-anvil --fork-url https://rpc.ankr.com/polygon_mumbai`
+# in another terminal
+# starts a local fork of Mumbai
+yarn anvil
 ```
 
-### Start your local Next.js app
+### Launch the local application
+
+You can now launch your local dapp with the commands:
 
 ```bash
+# in another terminal
+
+# install frontend dependencies
+
 cd front
-# this will start your Next.js app
-# the frontend is available on http://localhost:3001/
-# it also starts a local backend
-# and deploys the contracts on the local blockchain
+yarn
+
+# launch local application
+
 yarn dev
 ```
 
-The frontend is now available on http://localhost:3001/ and the contracts have been deployed on your local blockchain.
+The frontend is now available on http://localhost:3000/ and the contracts have been deployed on your local blockchain.
 You can now experiment the user flow by going to your local frontend http://localhost:3001/.
 
 As you will see, the app showcase simple examples on how to create gated airdrops with Sismo Connect.

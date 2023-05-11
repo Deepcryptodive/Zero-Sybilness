@@ -27,6 +27,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "../script/tree/compute-tree.ts"],
   "exclude": ["node_modules"]
 }

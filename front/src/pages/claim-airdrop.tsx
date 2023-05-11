@@ -25,6 +25,7 @@ import {
   SismoConnectClientConfig,
   AuthType,
 } from "@sismo-core/sismo-connect-react";
+import { devGroups } from "../config";
 
 // The application calls contracts on Mumbai testnet
 const userChain = mumbaiFork;

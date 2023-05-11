@@ -1,6 +1,3 @@
-import { Chain, createPublicClient, createWalletClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-
 ///////////////////
 
 // Replace with your address to become eligible for the airdrops
