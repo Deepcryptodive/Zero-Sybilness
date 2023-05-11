@@ -18,9 +18,9 @@ declare global {
 }
 
 export const mumbaiFork = {
-  id: 5151110,
-  name: "Fork Mumbai - Sismo",
-  network: "forkMumbaiSismo",
+  id: 5151111,
+  name: "Fork Mumbai - Tutorial Sismo",
+  network: "forkMumbaiTutoSismo",
   nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
   rpcUrls: {
     default: {

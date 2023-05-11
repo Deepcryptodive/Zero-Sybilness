@@ -15,6 +15,7 @@ This repository aims at providing simple examples on how to integrate Sismo Conn
 ```bash
 git clone https://github.com/sismo-core/sismo-connect-onchain-tutorial
 cd sismo-connect-onchain-tutorial
+yarn
 ```
 
 ### Install contract dependencies

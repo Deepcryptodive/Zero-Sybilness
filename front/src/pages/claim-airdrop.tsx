@@ -8,17 +8,8 @@ import {
   callContract,
   signMessage,
 } from "@/utils";
-import { abi as AirdropABI } from "../../../abi/Airdrop.json";
-import { transactions } from "../../../broadcast/Airdrop.s.sol/5151110/run-latest.json";
-import {
-  encodeAbiParameters,
-  createWalletClient,
-  http,
-  custom,
-  WalletClient,
-  PublicClient,
-} from "viem";
-import { polygonMumbai } from "viem/chains";
+import { transactions } from "../../../broadcast/Airdrop.s.sol/5151111/run-latest.json";
+import { createWalletClient, http, custom, WalletClient, PublicClient } from "viem";
 import BackButton from "../components/BackButton";
 import {
   SismoConnectButton,
@@ -27,7 +18,7 @@ import {
 } from "@sismo-core/sismo-connect-react";
 import { devGroups } from "../config";
 
-// The application calls contracts on Mumbai testnet
+// The application calls contracts on Mumbai fork
 const userChain = mumbaiFork;
 const contractAddress = transactions[0].contractAddress;
 
@@ -119,12 +110,9 @@ export default function ClaimAirdrop() {
           <>
             <h1 style={{ marginBottom: 10 }}>Claim an airdrop</h1>
             {!isAirdropAddressKnown && (
-              // <p style={{ marginBottom: 40 }}>
-              //   Select on which address you want to receive the airdrop and sign it with Sismo
-              //   Connect
-              // </p>
               <p style={{ marginBottom: 40 }}>
-                Select on which address you want to receive the airdrop by connecting your wallet
+                Select on which address you want to receive the airdrop and sign it with Sismo
+                Connect
               </p>
             )}
 
