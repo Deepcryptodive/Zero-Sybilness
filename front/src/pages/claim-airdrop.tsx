@@ -4,12 +4,12 @@ import {
   mumbaiFork,
   requestAccounts,
   getPublicClient,
-  handleClaimErrors,
   handleVerifyErrors,
   callContract,
+  signMessage,
 } from "@/utils";
-import { abi as AirdropABI } from "../../../../abi/Airdrop.json";
-import { transactions } from "../../../../broadcast/Airdrop.s.sol/5151110/run-latest.json";
+import { abi as AirdropABI } from "../../../abi/Airdrop.json";
+import { transactions } from "../../../broadcast/Airdrop.s.sol/5151110/run-latest.json";
 import {
   encodeAbiParameters,
   createWalletClient,
@@ -19,7 +19,7 @@ import {
   PublicClient,
 } from "viem";
 import { polygonMumbai } from "viem/chains";
-import BackButton from "../../components/BackButton";
+import BackButton from "../components/BackButton";
 import {
   SismoConnectButton,
   SismoConnectClientConfig,
@@ -157,12 +157,7 @@ export default function ClaimAirdrop() {
                 auths={[{ authType: AuthType.VAULT }]}
                 // we use the AbiCoder to encode the data we want to sign
                 // by encoding it we will be able to decode it on chain
-                signature={{
-                  message: encodeAbiParameters(
-                    [{ type: "address", name: "airdropAddress" }],
-                    [account as `0x${string}`]
-                  ),
-                }}
+                signature={{ message: signMessage(account) }}
                 // onResponseBytes calls a 'verify' function where the contract call logic
                 // is implemented
                 onResponseBytes={(responseBytes: string) => verify(responseBytes)}
@@ -171,7 +166,7 @@ export default function ClaimAirdrop() {
                 verifying={verifying}
                 // the callback path where you want to redirect your users from the Sismo Vault app
                 // here we choose this same page
-                callbackPath={"/level-0/claim-airdrop"}
+                callbackPath={"/claim-airdrop"}
               />
             )}
           </>

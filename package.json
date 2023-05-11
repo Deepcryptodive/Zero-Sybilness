@@ -1,0 +1,24 @@
+{
+  "name": "sismo-connect-onchain-tutorial",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "register-root": "cast rpc anvil_impersonateAccount 0xCA0583A6682607282963d3E2545Cd2e75697C2bb && cast send 0x5449Cc7A7E4024a7192d70c9Ce60Bb823993fd81 --rpc-url http://127.0.0.1:8545/ --from 0xCA0583A6682607282963d3E2545Cd2e75697C2bb 'registerRoot(uint256)'",
+    "anvil": "anvil --fork-url https://rpc.ankr.com/polygon_mumbai --chain-id 5151110",
+    "deploy-local": "yarn deploy-airdrop && yarn generate-abi",
+    "generate-abi": "front/script/generate-abi.sh",
+    "deploy-airdrop": "forge script DeployAirdrop --rpc-url http://localhost:8545 -vv --mnemonics 'test test test test test test test test test test test junk' --sender '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' --broadcast"
+  },
+  "dependencies": {
+    "@sismo-core/hydra-s2": "^1.0.0",
+    "@types/node": "18.15.11",
+    "axios": "^1.3.5",
+    "eslint": "8.38.0",
+    "nodemon": "^2.0.22",
+    "typescript": "5.0.4",
+    "viem": "^0.3.17"
+  },
+  "devDependencies": {
+    "@types/styled-components": "^5.1.26"
+  }
+}

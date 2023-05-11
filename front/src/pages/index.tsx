@@ -14,7 +14,7 @@ export default function Home() {
       </h1>
       <section>
         <ul>
-          <li onClick={() => router.push("/level-0/claim-airdrop")}>
+          <li onClick={() => router.push("/claim-airdrop")}>
             <h3>Claim an airdrop</h3>
             {/* replace with the title below */}
             {/* <h3>Claim an airdrop anonymously</h3>
