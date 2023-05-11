@@ -175,5 +175,13 @@ export function handleVerifyErrors(e: any): any {
     returnedError =
       "The address used to claim the airdrop is different from the one that has been signed in the user Vault.\nClick on the 'Back Home' button on the top left to retry the process.";
   }
+
+  if (
+    (e as { shortMessage: string }).shortMessage ===
+    'Encoded error signature "0x2a2172c9" not found on ABI.\nMake sure you are using the correct ABI and that the error exists on it.\nYou can look up the signature here: https://openchain.xyz/signatures?query=0x2a2172c9.'
+  ) {
+    returnedError =
+      "The registry root is not the same in the proof and in the AvailableRegistryRoot contract. Please relaunch the frontend and try again. If you experiment this error again, please contact us on Telegram https://t.me/+Z-SwcvXZFRVhZTQ0.";
+  }
   return returnedError;
 }
