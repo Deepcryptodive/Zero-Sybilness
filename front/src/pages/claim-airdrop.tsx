@@ -1,3 +1,4 @@
+import router from "next/router";
 import { useEffect, useState } from "react";
 import {
   switchNetwork,
@@ -18,7 +19,13 @@ import {
 } from "@sismo-core/sismo-connect-react";
 import { devGroups } from "../config";
 
-// The application calls contracts on Mumbai fork
+export enum APP_STATES {
+  init,
+  receivedProof,
+  claimingNFT,
+}
+
+// The application calls contracts on Mumbai testnet
 const userChain = mumbaiFork;
 const contractAddress = transactions[0].contractAddress;
 
@@ -35,7 +42,8 @@ export const sismoConnectConfig: SismoConnectClientConfig = {
 };
 
 export default function ClaimAirdrop() {
-  const [verifying, setVerifying] = useState(false);
+  const [appState, setAppState] = useState<APP_STATES>(APP_STATES.init);
+  const [responseBytes, setResponseBytes] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [tokenId, setTokenId] = useState<{ id: string }>();
   const [account, setAccount] = useState<`0x${string}`>(
@@ -68,19 +76,26 @@ export default function ClaimAirdrop() {
   }, [isAirdropAddressKnown]);
 
   async function connectWallet() {
+    router.push("/claim-airdrop");
     const address = await requestAccounts();
     localStorage.setItem("airdropAddress", address);
     setAccount(address);
     setIsAirdropAddressKnown(true);
   }
 
+  function setResponse(responseBytes: string) {
+    setResponseBytes(responseBytes);
+    if (appState !== 2) {
+      setAppState(APP_STATES.receivedProof);
+    }
+  }
+
   // This function is called when the user is redirected from the Sismo Vault to the Sismo Connect app
   // It is called with the responseBytes returned by the Sismo Vault
   // The responseBytes is a string that contains plenty of information about the user proofs and additional parameters that should hold with respect to the proofs
   // You can learn more about the responseBytes format here: https://docs.sismo.io/build-with-sismo-connect/technical-documentation/sismo-connect-client#getresponsebytes
-  async function verify(responseBytes: string) {
-    // update the react state to show the loading state
-    setVerifying(true);
+  async function claimWithSismo(responseBytes: string) {
+    setAppState(APP_STATES.claimingNFT);
     // switch the network
     await switchNetwork(userChain);
     try {
@@ -97,7 +112,7 @@ export default function ClaimAirdrop() {
     } catch (e) {
       setError(handleVerifyErrors(e));
     } finally {
-      setVerifying(false);
+      setAppState(APP_STATES.init);
       localStorage.removeItem("airdropAddress");
     }
   }
@@ -137,26 +152,44 @@ export default function ClaimAirdrop() {
               // - callbackPath: the path to which the user will be redirected back from the Sismo Vault to the Sismo Connect App
               // You can see more information about the Sismo Connect button in the Sismo Connect documentation: https://docs.sismo.io/build-with-sismo-connect/technical-documentation/sismo-connect-react
             }
-            {!error && isAirdropAddressKnown && (
-              <SismoConnectButton
-                // the client config created
-                config={sismoConnectConfig}
-                // the auth request we want to make
-                // here we want the proof of a Sismo Vault ownership from our users
-                auths={[{ authType: AuthType.VAULT }]}
-                // we use the AbiCoder to encode the data we want to sign
-                // by encoding it we will be able to decode it on chain
-                signature={{ message: signMessage(account) }}
-                // onResponseBytes calls a 'verify' function where the contract call logic
-                // is implemented
-                onResponseBytes={(responseBytes: string) => verify(responseBytes)}
-                // a simple state to know if the button is in verifying state
-                // i.e calling the smart contract
-                verifying={verifying}
-                // the callback path where you want to redirect your users from the Sismo Vault app
-                // here we choose this same page
-                callbackPath={"/claim-airdrop"}
-              />
+            {!error &&
+              isAirdropAddressKnown &&
+              appState != APP_STATES.receivedProof &&
+              appState != APP_STATES.claimingNFT && (
+                <SismoConnectButton
+                  // the client config created
+                  config={sismoConnectConfig}
+                  // the auth request we want to make
+                  // here we want the proof of a Sismo Vault ownership from our users
+                  auths={[{ authType: AuthType.VAULT }]}
+                  // we use the AbiCoder to encode the data we want to sign
+                  // by encoding it we will be able to decode it on chain
+                  signature={{ message: signMessage(account) }}
+                  // onResponseBytes calls a 'setResponse' function with the responseBytes returned by the Sismo Vault
+                  onResponseBytes={(responseBytes: string) => setResponse(responseBytes)}
+                  // // a simple state to know if the user is calling the airdrop contract
+                  // verifying={appState == APP_STATES.claimingNFT}
+                  // the callback path where you want to redirect your users from the Sismo Vault app
+                  // here we choose this same page
+                  callbackPath={"/claim-airdrop"}
+                />
+              )}
+
+            {/** Simple button to call the smart contract with the response as bytes */}
+            {appState == APP_STATES.receivedProof && (
+              <button
+                className="connect-wallet-button"
+                onClick={async () => {
+                  await claimWithSismo(responseBytes);
+                }}
+                value="Claim NFT"
+              >
+                {" "}
+                Claim NFT{" "}
+              </button>
+            )}
+            {appState == APP_STATES.claimingNFT && (
+              <p style={{ marginBottom: 40 }}>Claiming NFT...</p>
             )}
           </>
         )}
