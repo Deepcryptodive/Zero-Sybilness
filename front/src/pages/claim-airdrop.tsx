@@ -13,9 +13,9 @@ import { transactions } from "../../../broadcast/Airdrop.s.sol/5151111/run-lates
 import { createWalletClient, http, custom, WalletClient, PublicClient } from "viem";
 import BackButton from "../components/BackButton";
 import {
-  SismoConnectButton,
-  SismoConnectClientConfig,
-  AuthType,
+  SismoConnectButton, // the Sismo Connect React button displayed
+  SismoConnectClientConfig, // the client config with your appId
+  AuthType, // the authType enum, we will choose 'VAULT' in this tutorial
 } from "@sismo-core/sismo-connect-react";
 import { devGroups } from "../config";
 
@@ -29,7 +29,6 @@ export enum APP_STATES {
 const userChain = mumbaiFork;
 const contractAddress = transactions[0].contractAddress;
 
-// with your Sismo Connect app ID and enable dev mode.
 // you can create a new Sismo Connect app at https://factory.sismo.io
 // The SismoConnectClientConfig is a configuration needed to connect to Sismo Connect and requests data from your users.
 // You can find more information about the configuration here: https://docs.sismo.io/build-with-sismo-connect/technical-documentation/sismo-connect-react
@@ -162,8 +161,8 @@ export default function ClaimAirdrop() {
                   // the auth request we want to make
                   // here we want the proof of a Sismo Vault ownership from our users
                   auths={[{ authType: AuthType.VAULT }]}
-                  // we use the AbiCoder to encode the data we want to sign
-                  // by encoding it we will be able to decode it on chain
+                  // we ask the user to sign a message
+                  // it will be used onchain to prevent front running
                   signature={{ message: signMessage(account) }}
                   // onResponseBytes calls a 'setResponse' function with the responseBytes returned by the Sismo Vault
                   onResponseBytes={(responseBytes: string) => setResponse(responseBytes)}
