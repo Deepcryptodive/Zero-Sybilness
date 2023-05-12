@@ -132,7 +132,7 @@ export default function ClaimAirdrop() {
             )}
 
             {isAirdropAddressKnown ? (
-              <p style={{ marginBottom: 40 }}>You are connected with the address {account}</p>
+              <p style={{ marginBottom: 40 }}>You will receive the airdrop on {account}</p>
             ) : (
               !error && (
                 <button className="connect-wallet-button" onClick={() => connectWallet()}>
@@ -167,11 +167,8 @@ export default function ClaimAirdrop() {
                   signature={{ message: signMessage(account) }}
                   // onResponseBytes calls a 'setResponse' function with the responseBytes returned by the Sismo Vault
                   onResponseBytes={(responseBytes: string) => setResponse(responseBytes)}
-                  // // a simple state to know if the user is calling the airdrop contract
-                  // verifying={appState == APP_STATES.claimingNFT}
-                  // the callback path where you want to redirect your users from the Sismo Vault app
-                  // here we choose this same page
-                  callbackPath={"/claim-airdrop"}
+                  // Some text to display on the button
+                  text={"Claim with Sismo"}
                 />
               )}
 

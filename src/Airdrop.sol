@@ -25,7 +25,7 @@ contract Airdrop is ERC721, SismoConnect { // <--- add a Sismo Connect inheritan
       SismoConnect(APP_ID) // <--- Sismo Connect constructor
     {}
 
-    function claimWithSismoConnect(bytes memory response) public {
+    function claimWithSismo(bytes memory response) public {
         SismoConnectVerifiedResult memory result = verify({
             responseBytes: response,
             // we want the user to prove that he owns a Sismo Vault

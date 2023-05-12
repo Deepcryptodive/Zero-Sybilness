@@ -43,17 +43,15 @@ You can now launch your local dapp with the commands:
 # in another terminal
 
 # install frontend dependencies
-
 cd front
 yarn
 
 # launch local application
-
 yarn dev
 ```
 
 The frontend is now available on http://localhost:3000/ and the contracts have been deployed on your local blockchain.
-You can now experiment the user flow by going to your local frontend http://localhost:3001/.
+You can now experiment the user flow by going to your local frontend http://localhost:3000/.
 
 As you will see, the app showcase simple examples on how to create gated airdrops with Sismo Connect.
 To be eligible for the airdrops, you just need to add your address in [`./config.ts`](./config.ts):
