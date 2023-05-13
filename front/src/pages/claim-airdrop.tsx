@@ -34,13 +34,14 @@ const contractAddress = transactions[0].contractAddress;
 // You can find more information about the configuration here: https://docs.sismo.io/build-with-sismo-connect/technical-documentation/sismo-connect-react
 
 export const sismoConnectConfig: SismoConnectClientConfig = {
-  appId: "0xf4977993e52606cfd67b7a1cde717069",
+  appId: "0x6aa6b65b0f51e64729bc06022e76127b", //own appID
   devMode: {
-    enabled: true,
+    enabled: false,
   },
 };
 
 export default function ClaimAirdrop() {
+  const GITCOIN_PASSPORT_HOLDERS_GROUP_ID = "0x1cde61966decb8600dfd0749bd371f12";
   const [appState, setAppState] = useState<APP_STATES>(APP_STATES.init);
   const [responseBytes, setResponseBytes] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -161,13 +162,20 @@ export default function ClaimAirdrop() {
                   // the auth request we want to make
                   // here we want the proof of a Sismo Vault ownership from our users
                   auths={[{ authType: AuthType.VAULT }]}
+                  // [TODO] ADD IN LATER: request a proof of group membership from your users  
+                  // They should hold a Gitcoin Passport
+                  //claims={[{ groupId: GITCOIN_PASSPORT_HOLDERS_GROUP_ID }]} // <-- pass the groupId
+
                   // we ask the user to sign a message
                   // it will be used onchain to prevent front running
                   signature={{ message: signMessage(account) }}
                   // onResponseBytes calls a 'setResponse' function with the responseBytes returned by the Sismo Vault
                   onResponseBytes={(responseBytes: string) => setResponse(responseBytes)}
+                  // [TODO] To change later into: 
+                  //   onResponseBytes={(responseBytes: string) => verify(responseBytes)}
+                  // (because it's more than a simple auth)
                   // Some text to display on the button
-                  text={"Claim with Sismo"}
+                  text={"Claim with Zero Sybilness (powered by Sismo)"}
                 />
               )}
 
@@ -178,14 +186,14 @@ export default function ClaimAirdrop() {
                 onClick={async () => {
                   await claimWithSismo(responseBytes);
                 }}
-                value="Claim NFT"
+                value="Claim Airdrop"
               >
                 {" "}
-                Claim NFT{" "}
+                Claim Reward{" "}
               </button>
             )}
             {appState == APP_STATES.claimingNFT && (
-              <p style={{ marginBottom: 40 }}>Claiming NFT...</p>
+              <p style={{ marginBottom: 40 }}>Claiming Reward...</p>
             )}
           </>
         )}
@@ -198,9 +206,9 @@ export default function ClaimAirdrop() {
             </p>
             <div className="profile-container">
               <div>
-                <h2>NFT Claimed</h2>
-                <b>tokenId: {tokenId?.id}</b>
-                <p>Address used: {account}</p>
+                <h2>Reward Claimed</h2>
+                <b>NFT tokenId: {tokenId?.id}</b>
+                <p>Receiving Address: {account}</p>
               </div>
             </div>
           </>
