@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "sismo-connect-solidity/SismoLib.sol"; // <--- add a Sismo Connect import
 
-/* 
+/*
  * @title Airdrop
  * @dev Simple Airdrop contract that mints a token to the msg.sender
  * This contract is used for tutorial purposes only
@@ -16,12 +16,13 @@ contract Airdrop is ERC721, SismoConnect { // <--- add a Sismo Connect inheritan
     error RegularERC721TransferFromAreNotAllowed();
     error RegularERC721SafeTransferFromAreNotAllowed();
 
-    bytes16 public constant APP_ID = 0xf4977993e52606cfd67b7a1cde717069; // <--- add your appId as a constant
+    bytes16 public constant APP_ID = 0x6aa6b65b0f51e64729bc06022e76127b; // <--- my custom appID
+    bytes16 public constant GITCOIN_PASSPORT_HOLDERS_GROUP_ID = 0x1cde61966decb8600dfd0749bd371f12;
 
     constructor(
         string memory name,
         string memory symbol
-    ) ERC721(name, symbol) 
+    ) ERC721(name, symbol)
       SismoConnect(APP_ID) // <--- Sismo Connect constructor
     {}
 
@@ -29,10 +30,14 @@ contract Airdrop is ERC721, SismoConnect { // <--- add a Sismo Connect inheritan
         SismoConnectVerifiedResult memory result = verify({
             responseBytes: response,
             // we want the user to prove that he owns a Sismo Vault
-            // we are recreating the auth request made in the frontend to be sure that 
+            // we are recreating the auth request made in the frontend to be sure that
             // the proofs provided in the response are valid with respect to this auth request
             auth: buildAuth({authType: AuthType.VAULT}),
-            // we also want to check if the signed message provided in the response is the signature of the user's address
+            // [TODO] Add: claim request to check that the proof provided is valid
+            //with respect to the Gitcoin Passport requirement
+            //claim: buildClaim({groupId: GITCOIN_PASSPORT_HOLDERS_GROUP_ID}), //
+
+            // we also still want to check if the signed message provided in the response is the signature of the user's address
             signature:  buildSignature({message: abi.encode(msg.sender)})
         });
 
@@ -43,6 +48,7 @@ contract Airdrop is ERC721, SismoConnect { // <--- add a Sismo Connect inheritan
         // So if a user tries to claim twice with a proof from the same vault, the vaultId will be the same and the contract will revert
         uint256 tokenId = SismoConnectHelper.getUserId(result, AuthType.VAULT);
         _mint(msg.sender, tokenId);
+        // [TO DO] Instead of doing _mint, here do a claim on the ERC-20 airdrop claim contract
     }
 
     function transferFrom(address, address, uint256) public virtual override {
